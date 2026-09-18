@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is in the **planning stage** — there is no application code, package manifest, or
-build tooling yet. Only `README.md` (public-facing project description) and
-`personal-inflation-calculator-brief.md` (detailed design reference, gitignored — not part of the
-committed codebase) exist. There are no build, lint, or test commands to run because no source
-tree has been created yet.
+A Next.js app has been scaffolded in `web/` (App Router, TypeScript, Tailwind) — this is the single
+application for both frontend and API; there is no separate backend service. Application logic
+(calculation engine, ingestion, data model) still needs to be built out. `personal-inflation-calculator-brief.md`
+(detailed design reference, gitignored — not part of the committed codebase) has the full design.
 
-When asked to bootstrap the project, follow the architecture and decisions below rather than
-inventing a different structure.
+Build/lint/test commands run from `web/`: `npm run dev`, `npm run build`, `npm run lint`.
+
+When extending the project, follow the architecture and decisions below rather than inventing a
+different structure.
 
 ## What this project is
 
@@ -30,15 +31,19 @@ personal_inflation = Σ ( w_i × r_i )
 ## Architecture (as planned)
 
 ```
-data.gov.sg API --(scheduled monthly pull)--> Postgres (long-format CPI store)
+data.gov.sg API --(scheduled monthly pull)--> Postgres (long-format CPI store, hosted on Aiven)
                                                     ^
-Frontend (React) <---> API service (calculation engine) <---> Postgres
+Next.js app (web/): React frontend + Route Handlers (/app/api/*) as the API/calculation engine
 ```
+
+Frontend and backend are **one Next.js app**, not separate services — UI code and API route
+handlers live side by side in `web/app`. The route handlers are the calculation engine's API
+surface; there is no separate API process to deploy or proxy to.
 
 Key decisions to preserve when implementing:
 
-1. **Calculation logic lives entirely in the backend** — one source of truth, testable in
-   isolation. The API is stateless.
+1. **Calculation logic lives entirely in Next.js Route Handlers (server-side)** — one source of
+   truth, testable in isolation, never duplicated into client code. The API is stateless.
 2. **Ingest and cache CPI data on a schedule; never proxy data.gov.sg per request.** data.gov.sg
    rate-limits aggressively, and this keeps the app responsive and resilient to upstream outages.
 3. **User spending data is never persisted server-side.** Baskets are shareable via URL-encoding,
@@ -59,24 +64,33 @@ ingestion_run (id, started_at, finished_at, status, rows_upserted, error)
 
 ### Planned API surface
 
-| Method | Path | Purpose |
+Implemented as Next.js Route Handlers under `web/app/api/`:
+
+| Method | Path | Route Handler file |
 |---|---|---|
-| `GET` | `/api/categories` | List categories with metadata |
-| `GET` | `/api/cpi?categories=&from=&to=` | Time series for charting |
-| `GET` | `/api/presets` | Official basket weights by income group |
-| `POST` | `/api/inflation/personal` | Core calculation: basket + period in, rate + contributions out |
-| `GET` | `/api/insights` | Precomputed summary insights |
-| `GET` | `/health` | Liveness and readiness |
+| `GET` | `/api/categories` | `web/app/api/categories/route.ts` |
+| `GET` | `/api/cpi?categories=&from=&to=` | `web/app/api/cpi/route.ts` |
+| `GET` | `/api/presets` | `web/app/api/presets/route.ts` |
+| `POST` | `/api/inflation/personal` | `web/app/api/inflation/personal/route.ts` |
+| `GET` | `/api/insights` | `web/app/api/insights/route.ts` |
+| `GET` | `/api/health` | `web/app/api/health/route.ts` (already scaffolded) |
 
-## Stack (as planned in README.md)
+## Stack
 
-- Frontend: React
-- Backend: API service with a calculation engine
-- Database: PostgreSQL
-- Local dev: Docker Compose (frontend, API, Postgres, ingestion worker) — a single
-  `docker compose up` should run the whole stack
-- Deployment: AWS via Terraform or AWS CDK (S3+CloudFront for frontend, ECS Fargate or
-  Lambda+API Gateway for the API, RDS Postgres, EventBridge-scheduled ingestion)
+- Frontend + backend: **Next.js** (App Router, TypeScript) in `web/` — one app. The frontend is
+  React pages/components; the API/calculation engine is Next.js Route Handlers in the same app,
+  not a separate service.
+- Database: PostgreSQL, **hosted on Aiven** (managed, already provisioned) — the app connects with
+  a connection string/credentials from environment variables (e.g. `DATABASE_URL`). No self-hosted
+  or containerized Postgres to run or deploy.
+- Local dev: run the Next.js app directly (`npm run dev` in `web/`), pointed at Aiven Postgres via
+  env vars (`.env.local`, gitignored). No Docker Compose is needed for Postgres; only introduce
+  Docker Compose if a standalone ingestion worker process ends up needing one.
+- Ingestion: a scheduled job (e.g. a cron-triggered Route Handler, or a separate script run on a
+  schedule) that pulls from data.gov.sg and upserts into the Aiven Postgres instance.
+- Deployment: the frontend and API deploy together as a single Next.js service (exact target —
+  e.g. a container platform or serverless host — still open); the database is already deployed on
+  Aiven, so no Terraform/CDK is needed to provision RDS.
 
 ## Known modeling caveats to carry into any implementation
 

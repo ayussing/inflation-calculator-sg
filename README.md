@@ -25,7 +25,6 @@ Early planning stage. Architecture, data model, and feature scope are still bein
 
 ## Stack
 
-- Frontend: React
-- Backend: API service with a calculation engine
-- Database: PostgreSQL
-- Infrastructure: Docker Compose locally; AWS (Terraform/CDK) for deployment
+- Frontend + backend: Next.js (single app — API routes serve as the calculation engine)
+- Database: PostgreSQL, hosted on Aiven
+- Infrastructure: `npm run dev` locally; deployment target still open
