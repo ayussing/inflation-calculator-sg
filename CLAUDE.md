@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Next.js app has been scaffolded in `web/` (App Router, TypeScript, Tailwind) — this is the single
 application for both frontend and API; there is no separate backend service. Application logic
-(calculation engine, ingestion, data model) still needs to be built out. `personal-inflation-calculator-brief.md`
-(detailed design reference, gitignored — not part of the committed codebase) has the full design.
+(calculation engine, ingestion, data model) still needs to be built out. `docs/personal-inflation-calculator-brief.md`
+(detailed design reference, committed to the repo) has the full design.
 
 Build/lint/test commands run from `web/`: `npm run dev`, `npm run build`, `npm run lint`.
 
