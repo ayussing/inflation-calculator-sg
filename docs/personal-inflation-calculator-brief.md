@@ -35,18 +35,26 @@ difference.
 ### Core formula
 
 ```
-personal_inflation = Σ ( w_i × r_i )
+personal_index[t]  = Σ ( w_i × CPI_i[t] )
+personal_inflation = ( personal_index[end] / personal_index[start] - 1 ) × 100
 
   w_i = user's share of total spending in category i  (weights normalised to sum to 1)
-  r_i = percentage price change of category i over the selected period
 ```
+
+Note: the simpler form `Σ ( w_i × r_i )` (where `r_i` is each category's own percentage change)
+is only exact when every category starts at the same index level. The ratio form above is the
+correct Laspeyres calculation and is the one the validation test checks against.
 
 ### Category contribution
 
-For each category, contribution = `w_i × r_i`. Expressed as a share of the total, this powers the
-headline insight, for example: "Transport drove 60% of your inflation."
+```
+contribution_i = w_i × ( CPI_i[end] - CPI_i[start] ) / personal_index[start] × 100
+```
 
-### Index change over a period
+Contributions sum exactly to `personal_inflation`. Expressed as a share of the total, this powers
+the headline insight, for example: "Transport drove 60% of your inflation."
+
+### Index change for a single category (used for charts and the category explorer)
 
 ```
 r_i = (CPI_i[end_period] / CPI_i[start_period] - 1) × 100
@@ -72,51 +80,85 @@ where `personal_index[t] = Σ ( w_i × CPI_i[t] )`.
 
 ## 3. Data sources (data.gov.sg / SingStat)
 
-| Series | Use in the app | Frequency |
-|---|---|---|
-| CPI at division level (about 10 broad categories) | Main calculation inputs | Monthly |
-| CPI at group level (finer sub-categories) | Stretch goal: greater granularity | Monthly |
-| CPI by household income group (lowest 20%, middle 60%, highest 20%) | Preset baskets and the income comparison insight | Half-yearly |
-| Percent change in CPI by household income group | Cross-check and insight content | Annual |
-| CPI all items less imputed rentals on owner-occupied accommodation (OOA) | Homeowner toggle | Monthly |
+All series below use **2024 as the base year** (rebased from 2019 in February 2025). Weights come
+from the Household Expenditure Survey (HES) 2023, updated to 2024 prices.
 
-### Division-level categories (2019 base)
+| Series | Use in the app | Frequency | Dataset ID |
+|---|---|---|---|
+| CPI, 2024 as base year (all items, divisions, groups, classes) | Main calculation inputs, category explorer | Monthly | `d_bdaff844e3ef89d39fceb962ff8f0791` |
+| CPI at group level (finer sub-categories, same dataset as above) | Stretch goal: greater granularity | Monthly | same as above |
+| CPI by household income group (lowest 20%, middle 60%, highest 20%), 2024 base | Preset baskets and the income comparison insight | Half-yearly | to confirm |
+| Percent change in CPI by household income group | Cross-check and insight content | Annual | to confirm |
+| CPI Additional Indicators, 2024 base (includes "All Items less Imputed Rentals for Housing") | Homeowner toggle | Monthly | to confirm |
 
-Food; Clothing & Footwear; Housing & Utilities; Household Durables & Services; Health Care;
-Transport; Communication; Recreation & Culture; Education; Miscellaneous Goods & Services.
+Terminology: what used to be called "less imputed rentals on owner-occupied accommodation (OOA)"
+is now called **"less Imputed Rentals for Housing."**
 
-### Official basket weights (per 10,000), 2014-based series
+### Division-level categories (2024 base)
 
-Included to show how differently income groups spend. Verify against the current base year
-before using these numbers in the app.
+Food; Clothing & Footwear; Housing & Utilities; Household Durables & Services; Health;
+Transport; Information & Communication; Recreation, Sport & Culture; Education;
+Miscellaneous Goods & Services.
 
-| Income group | Food | Housing & Utilities | Transport | Education |
+Three names changed from the 2019 base: Health Care became **Health**, Communication became
+**Information & Communication**, and Recreation & Culture became **Recreation, Sport & Culture**.
+
+### Official basket weights (per 10,000), 2024-based series
+
+Source: SingStat press release, CPI by Household Income Group, Jul to Dec 2025 (Annex 1).
+Use these to seed `basket_preset_weight`.
+
+| Division | General | Lowest 20% | Middle 60% | Highest 20% |
 |---|---|---|---|---|
-| General households | 2167 | 2625 | 1579 | 615 |
-| Lowest 20% | 2435 | 4002 | 732 | 261 |
-| Middle 60% | 2360 | 2615 | 1404 | 602 |
-| Highest 20% | 1835 | 2396 | 1984 | 700 |
+| Food | 2,042 | 2,262 | 2,177 | 1,742 |
+| Clothing & Footwear | 165 | 120 | 166 | 177 |
+| Housing & Utilities | 2,938 | 3,256 | 2,835 | 2,987 |
+| Household Durables & Services | 547 | 571 | 519 | 588 |
+| Health | 1,008 | 1,169 | 1,080 | 807 |
+| Transport | 1,307 | 875 | 1,206 | 1,642 |
+| Information & Communication | 381 | 455 | 410 | 310 |
+| Recreation, Sport & Culture | 595 | 380 | 571 | 723 |
+| Education | 579 | 517 | 580 | 607 |
+| Miscellaneous Goods & Services | 438 | 395 | 456 | 417 |
+| **Total** | 10,000 | 10,000 | 10,000 | 10,000 |
+| All Items less Imputed Rentals for Housing | 7,862 | 7,556 | 7,900 | 7,925 |
+
+**Income group definition changed.** For the 2024-based series, households are ranked by monthly
+household income *per household member* (previously total household income). The 2024-based
+groups are therefore not directly comparable with older income group series. Mention this in the
+README.
 
 ### Supporting evidence for the premise
 
-SingStat's own commentary confirms that income groups experience different inflation. In 2023, the
-lowest 20% income group recorded the smallest CPI increase excluding OOA, partly because car
-prices and holiday expenses made up a smaller share of its spending basket.
+SingStat's own commentary confirms that income groups experience different inflation. For 2025,
+CPI-All Items inflation was 0.6% for the lowest 20%, 0.9% for the middle 60%, and 1.2% for the
+highest 20%. The highest 20% saw the largest increase excluding imputed rentals, mainly because
+motor cars make up a bigger share of its spending basket.
 
-### Things to verify before building
+### Notes on the monthly dataset
 
-1. **Base year / rebasing.** The current series derive their weights from the Household
-   Expenditure Survey conducted between October 2017 and September 2018, with 2019 as the base
-   year. Check whether a newer base year has been published. Splicing an old series onto a new one
-   is worth documenting as a design decision.
-2. **Exact dataset IDs.** Confirm each `d_xxxxx` dataset ID on the portal. They do change.
-3. **CSV shape.** These SingStat exports arrive wide (one column per period), with mixed text and
-   numeric columns, `na` values, and footnote rows.
+- **Base year / rebasing: resolved.** The current base is 2024. The division-level series already
+  run back to Jan 1961 on the 2024 base, so SingStat has done the linking and no manual splicing
+  is needed.
+- **Dataset IDs.** The monthly ID is confirmed above. Confirm the remaining `d_xxxxx` IDs on the
+  portal. They do change.
+- **CSV shape.** About 207 rows (one per series) by 788 columns (one per month), under 1 MB.
+  - Columns run **newest first** (2026 Jul, 2026 Jun, ...). Do not assume chronological order.
+  - Older columns contain `na` for sub-series that did not exist yet, so they are typed as text.
+    Parse with `na` handling rather than trusting column types.
+  - The hierarchy is encoded as **leading spaces** in the `DataSeries` label (" Food",
+    "  Food Excl Food & Beverage Serving Services", ...). Derive `level` and `parent_id` from the
+    indentation depth.
+  - Some labels may repeat under different parents, so key series on their full ancestor path,
+    not the label alone.
 
 ### API access and rate limits
 
 - data.gov.sg enforces rate limits, reset every 10 seconds, and limits are significantly lower for
   callers without an API key.
+- Sample endpoint: `https://data.gov.sg/api/action/datastore_search?resource_id=<dataset_id>`.
+  Since the full monthly CSV is under 1 MB, downloading the whole file once per ingestion run is
+  simpler than paging through rows.
 - Obtain a developer API key by logging in to the data.gov.sg dashboard. Store it in AWS Secrets
   Manager (or a `.env` file locally), never in the repository.
 - **Design implication:** ingest the CPI data into your own database on a schedule. Do not proxy
@@ -141,9 +183,11 @@ prices and holiday expenses made up a smaller share of its spending basket.
 - **Purchasing power converter:** "S$100 of your basket in 2019 costs S$X today."
 - **What-if scenarios:** for example, "What if I sell my car?" reallocates transport spending and
   recalculates.
-- **Homeowner toggle:** imputed rent on owner-occupied accommodation is a large part of the
-  Housing category but is not a cash outlay for owners. Switching to the "less OOA" series shows
-  genuine understanding of the data.
+- **Homeowner toggle:** imputed rent on owner-occupied homes is a large part of the Housing
+  category but is not a cash outlay for owners. Switching to the "less Imputed Rentals for
+  Housing" series shows genuine understanding of the data. For a personal basket, this means
+  removing the imputed rentals component from the user's Housing weight, so check whether that
+  row exists in the monthly dataset or use the Additional Indicators dataset.
 - **Shareable link:** encode the basket into the URL so results can be shared with nothing stored
   server-side.
 - **Insights page:** highest-inflation categories over 1, 5, and 10 years; the gap between income
@@ -232,8 +276,10 @@ pair so reruns are safe.
    logic stays simple and new periods do not require schema changes.
 5. **Weight normalisation.** User inputs rarely sum neatly, so normalise internally and display
    rounded values. Document the rounding rule.
-6. **Rebasing strategy.** Decide whether to splice series across base years or restrict the
-   selectable range to one base, and say why.
+6. **Rebasing strategy.** Use SingStat's linked history on the 2024 base rather than splicing
+   series manually. State that the underlying basket weights changed at each rebase (every five
+   years), so long-range results are approximate, and that the income group definition changed
+   with the 2024 base.
 7. **Choice of division level over group level.** Fewer inputs means a usable form; group level is
    noted as a future enhancement.
 
@@ -243,9 +289,18 @@ pair so reruns are safe.
 
 ### Validation test (the standout one)
 
-Feed SingStat's official basket weights into the calculation engine and assert that the output
-matches the official all-items CPI change for the same period, within a small tolerance. This
-proves correctness against real published figures.
+Feed SingStat's official general household weights into the calculation engine and assert that
+the output matches the official All Items CPI, within a small tolerance (about 0.05 index points).
+This proves correctness against real published figures.
+
+For any month from Jan 2024 onward, this identity should hold (up to rounding):
+
+```
+All_Items[t] ≈ Σ ( w_i × Division_i[t] ) / 10,000
+```
+
+Limit the test to periods from Jan 2024 onward. Earlier months were aggregated with older baskets,
+so they will not reproduce exactly. That limitation is worth explaining in the README.
 
 ### Unit tests
 
@@ -317,8 +372,11 @@ GitHub Actions running lint, unit and integration tests, a build, and `terraform
 
 ## 10. Open items
 
-- [ ] Confirm the current CPI base year and whether a rebase has occurred
-- [ ] Record the exact dataset IDs in use
+- [x] Confirm the current CPI base year and whether a rebase has occurred (2024 base, rebased Feb 2025)
+- [x] Record the monthly CPI dataset ID (`d_bdaff844e3ef89d39fceb962ff8f0791`)
+- [ ] Record the dataset IDs for the income group and Additional Indicators series
+- [ ] Update category names and preset weights in seed data to the 2024 base
+- [ ] Check whether an "Imputed Rentals for Housing" row exists in the monthly dataset
 - [ ] Obtain a data.gov.sg developer API key
 - [ ] Choose the tech stack (backend language, ORM, chart library)
 - [ ] Decide between Terraform and AWS CDK
