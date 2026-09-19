@@ -7,9 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:check": "tsx --env-file-if-exists=.env.local scripts/check-db.ts"
+    "db:check": "tsx --env-file-if-exists=.env.local scripts/check-db.ts",
+    "migrate:up": "tsx --env-file-if-exists=.env.local scripts/migrate.ts up",
+    "migrate:down": "tsx --env-file-if-exists=.env.local scripts/migrate.ts down",
+    "migrate:create": "node-pg-migrate create -j sql",
+    "ingest:cpi": "tsx --env-file-if-exists=.env.local scripts/ingest-cpi.ts",
+    "test": "vitest run"
   },
   "dependencies": {
+    "csv-parse": "^7.0.2",
     "next": "16.3.5",
     "pg": "^8.23.0",
     "react": "19.2.8",
@@ -18,14 +24,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "node-pg-migrate": "^9.0.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.1"
   }
 }

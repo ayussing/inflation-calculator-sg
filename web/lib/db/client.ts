@@ -1,4 +1,5 @@
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { getPgConnectionConfig } from "./connectionConfig";
 
 declare global {
   // `var` is required here: `declare global` only merges `var` declarations into the global scope.
@@ -6,21 +7,7 @@ declare global {
 }
 
 function createPool(): Pool {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL environment variable is not set");
-  }
-
-  // Aiven's connection string includes sslmode=require, which pg-connection-string now
-  // treats as full certificate verification and would silently override the `ssl` option
-  // below. Strip it so SSL is controlled solely by the explicit option here.
-  const url = new URL(connectionString);
-  url.searchParams.delete("sslmode");
-
-  return new Pool({
-    connectionString: url.toString(),
-    ssl: { rejectUnauthorized: false },
-  });
+  return new Pool(getPgConnectionConfig());
 }
 
 // Lazy: the pool is only created on first query, so importing this module never requires
@@ -46,4 +33,31 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
 ): Promise<T[]> {
   const result = await getPool().query<T>(text, params);
   return result.rows;
+}
+
+export type QueryFn = typeof query;
+
+// Runs `fn` against a single checked-out client wrapped in BEGIN/COMMIT/ROLLBACK, so multiple
+// statements can be committed or rolled back atomically. `fn` receives a `query`-shaped function
+// bound to the transaction's client, so callers written against `QueryFn` work unmodified whether
+// or not they're inside a transaction.
+export async function withTransaction<T>(
+  fn: (txQuery: QueryFn) => Promise<T>
+): Promise<T> {
+  const client: PoolClient = await getPool().connect();
+  const txQuery: QueryFn = async (text, params) => {
+    const result = await client.query(text, params);
+    return result.rows;
+  };
+  try {
+    await client.query("BEGIN");
+    const result = await fn(txQuery);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
