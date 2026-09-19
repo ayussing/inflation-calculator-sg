@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
+
+export const ErrorResponseSchema = z
+  .object({
+    status: z.literal("error"),
+    message: z.string(),
+    details: z.unknown().optional(),
+  })
+  .meta({ id: "ErrorResponse", description: "Standard error envelope returned by non-2xx responses." });
+
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
 // Thrown by route handlers to signal a specific HTTP status; caught by toErrorResponse so each
 // route's error handling is one `catch (e) { return toErrorResponse(e); }` instead of a repeated

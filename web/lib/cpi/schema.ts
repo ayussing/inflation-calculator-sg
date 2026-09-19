@@ -1,13 +1,15 @@
 import { z } from "zod";
 
-export const CpiSeriesSchema = z.object({
-  id: z.number().int().positive(),
-  code: z.string().min(1),
-  name: z.string().min(1),
-  level: z.number().int().nonnegative(),
-  parentId: z.number().int().positive().nullable(),
-  baseYear: z.number().int(),
-});
+export const CpiSeriesSchema = z
+  .object({
+    id: z.number().int().positive(),
+    code: z.string().min(1),
+    name: z.string().min(1),
+    level: z.number().int().nonnegative(),
+    parentId: z.number().int().positive().nullable(),
+    baseYear: z.number().int(),
+  })
+  .meta({ id: "CpiSeries", description: "A CPI category/series definition." });
 
 export type CpiSeries = z.infer<typeof CpiSeriesSchema>;
 
@@ -28,11 +30,14 @@ export type CpiObservation = z.infer<typeof CpiObservationSchema>;
 export const YearMonthSchema = z
   .string()
   .regex(/^\d{4}-\d{2}$/, "must be in YYYY-MM format")
-  .transform((s) => `${s}-01`);
+  .transform((s) => `${s}-01`)
+  .meta({ id: "YearMonth", description: "Year-month in YYYY-MM format.", example: "2024-01" });
 
-export const CategoriesResponseSchema = z.object({
-  categories: z.array(CpiSeriesSchema),
-});
+export const CategoriesResponseSchema = z
+  .object({
+    categories: z.array(CpiSeriesSchema),
+  })
+  .meta({ id: "CategoriesResponse" });
 
 export type CategoriesResponse = z.infer<typeof CategoriesResponseSchema>;
 
@@ -58,14 +63,18 @@ export const CpiQuerySchema = z
 
 export type CpiQuery = z.infer<typeof CpiQuerySchema>;
 
-export const CpiObservationEntrySchema = z.object({
-  categoryCode: z.string(),
-  periodDate: z.string(),
-  indexValue: z.number(),
-});
+export const CpiObservationEntrySchema = z
+  .object({
+    categoryCode: z.string(),
+    periodDate: z.string(),
+    indexValue: z.number(),
+  })
+  .meta({ id: "CpiObservationEntry" });
 
-export const CpiResponseSchema = z.object({
-  series: z.array(CpiObservationEntrySchema),
-});
+export const CpiResponseSchema = z
+  .object({
+    series: z.array(CpiObservationEntrySchema),
+  })
+  .meta({ id: "CpiResponse" });
 
 export type CpiResponse = z.infer<typeof CpiResponseSchema>;

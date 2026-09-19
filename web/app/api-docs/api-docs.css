@@ -1,0 +1,7 @@
+/* swagger-ui-react ships a light-only theme: it sets its own text color (#3b4151) but not its
+   own page background, assuming a white page. This app's dark-mode body background (#0a0a0a)
+   otherwise bleeds through, making the text unreadable. */
+.api-docs-page {
+  background: #ffffff;
+  min-height: 100vh;
+}
