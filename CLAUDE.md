@@ -42,8 +42,9 @@ surface; there is no separate API process to deploy or proxy to.
 
 Key decisions to preserve when implementing:
 
-1. **Calculation logic lives entirely in Next.js Route Handlers (server-side)** — one source of
-   truth, testable in isolation, never duplicated into client code. The API is stateless.
+1. **Calculation logic lives entirely server-side**, in `lib/` (imported by Route Handlers, never
+   by client components) — one source of truth, testable in isolation, never duplicated into client
+   code. The API is stateless.
 2. **Ingest and cache CPI data on a schedule; never proxy data.gov.sg per request.** data.gov.sg
    rate-limits aggressively, and this keeps the app responsive and resilient to upstream outages.
 3. **User spending data is never persisted server-side.** Baskets are shareable via URL-encoding,
@@ -51,6 +52,34 @@ Key decisions to preserve when implementing:
 4. **CPI data is stored long-format**, not as the wide per-period CSV shape SingStat exports it in.
    Wide-to-long normalization happens once, at ingestion time.
 5. **Ingestion must be idempotent** — upsert keyed on `(series_id, period_date)` so reruns are safe.
+
+### Code organization
+
+```
+web/
+  app/
+    api/                       # Route Handlers only — thin glue: parse request, call lib/, shape response
+    (calculator)/              # route group: main UI, omitted from the URL
+      page.tsx
+      _components/             # page-specific UI, colocated and non-routable
+  components/                  # UI components shared across routes
+  lib/
+    db/                        # Postgres client (Aiven)
+    cpi/                       # CPI series/observation data access + types
+    inflation/                 # calculation engine (pure, no I/O) + Zod request/response schemas
+    ingestion/                 # data.gov.sg pull + idempotent upsert
+```
+
+- `app/` is for routing only — pages, layouts, and Route Handlers. Everything else (the calculation
+  engine, DB access, ingestion) lives in `lib/`, organized **by domain, not by type**, so the
+  calculation engine stays a pure, dependency-free module that's trivial to unit test.
+- **Zod schemas are the single source of truth for request/response shapes.** Define them in
+  `lib/<domain>/schema.ts`, validate the request body against them in the Route Handler, and derive
+  types for both server and client with `z.infer<...>` — never hand-duplicate types between a Route
+  Handler and the frontend that calls it.
+- Route groups (e.g. `(calculator)`) organize `app/` by feature without affecting the URL. UI that's
+  specific to one page belongs in that page's `_components/` folder; only genuinely shared UI goes
+  in the top-level `components/`.
 
 ### Planned data model
 
