@@ -1,0 +1,52 @@
+{
+  "source": {
+    "dataset": "data.gov.sg d_bdaff844e3ef89d39fceb962ff8f0791 (\"Consumer Price Index (CPI), 2024 As Base Year, Monthly\")",
+    "weightsSource": "SingStat press release, CPI by Household Income Group Jul-Dec 2025, Annex 1 (General household weights, per 10,000, 2024 base)",
+    "fetchedAt": "2026-09-19",
+    "note": "Real published figures, fetched live from data.gov.sg during implementation. Re-verify against the live dataset before relying on this fixture far in the future -- dataset IDs and published values can be revised, and pre-2024 months use the old basket weights so won't reproduce this identity."
+  },
+  "weightsPer10000": {
+    "Food": 2042,
+    "Clothing & Footwear": 165,
+    "Housing & Utilities": 2938,
+    "Household Durables & Services": 547,
+    "Health": 1008,
+    "Transport": 1307,
+    "Information & Communication": 381,
+    "Recreation, Sport & Culture": 595,
+    "Education": 579,
+    "Miscellaneous Goods & Services": 438
+  },
+  "periods": {
+    "2024-01-01": {
+      "allItems": 98.752,
+      "divisions": {
+        "Food": 99.422,
+        "Clothing & Footwear": 101.884,
+        "Housing & Utilities": 97.086,
+        "Household Durables & Services": 100.095,
+        "Health": 99.223,
+        "Transport": 99.173,
+        "Information & Communication": 100.095,
+        "Recreation, Sport & Culture": 97.839,
+        "Education": 100.036,
+        "Miscellaneous Goods & Services": 99.975
+      }
+    },
+    "2026-07-01": {
+      "allItems": 102.696,
+      "divisions": {
+        "Food": 103.297,
+        "Clothing & Footwear": 99.775,
+        "Housing & Utilities": 101.065,
+        "Household Durables & Services": 100.561,
+        "Health": 106,
+        "Transport": 109.828,
+        "Information & Communication": 93.293,
+        "Recreation, Sport & Culture": 100.041,
+        "Education": 99.77,
+        "Miscellaneous Goods & Services": 101.376
+      }
+    }
+  }
+}
