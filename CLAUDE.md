@@ -111,7 +111,9 @@ Implemented as Next.js Route Handlers under `web/app/api/`:
   not a separate service.
 - Database: PostgreSQL, **hosted on Aiven** (managed, already provisioned) — the app connects with
   a connection string/credentials from environment variables (e.g. `DATABASE_URL`). No self-hosted
-  or containerized Postgres to run or deploy.
+  or containerized Postgres to run or deploy. Client library: **`pg`** (node-postgres), a singleton
+  `Pool` in `lib/db/client.ts` reused across `next dev` hot reloads. Aiven requires SSL; the pool
+  connects with `ssl: { rejectUnauthorized: false }` rather than pinning Aiven's CA cert.
 - Local dev: run the Next.js app directly (`npm run dev` in `web/`), pointed at Aiven Postgres via
   env vars (`.env.local`, gitignored). No Docker Compose is needed for Postgres; only introduce
   Docker Compose if a standalone ingestion worker process ends up needing one.
