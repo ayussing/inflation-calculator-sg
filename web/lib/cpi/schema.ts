@@ -23,3 +23,49 @@ export const CpiObservationSchema = z.object({
 });
 
 export type CpiObservation = z.infer<typeof CpiObservationSchema>;
+
+// External API params use YYYY-MM (no day-of-month); normalized to the stored YYYY-MM-01 form.
+export const YearMonthSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}$/, "must be in YYYY-MM format")
+  .transform((s) => `${s}-01`);
+
+export const CategoriesResponseSchema = z.object({
+  categories: z.array(CpiSeriesSchema),
+});
+
+export type CategoriesResponse = z.infer<typeof CategoriesResponseSchema>;
+
+export const CpiQuerySchema = z
+  .object({
+    categories: z
+      .string()
+      .min(1, "categories is required")
+      .transform((s) =>
+        s
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
+      )
+      .pipe(z.array(z.string().min(1)).min(1, "at least one category code is required")),
+    from: YearMonthSchema.optional(),
+    to: YearMonthSchema.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: "from must not be after to",
+    path: ["from"],
+  });
+
+export type CpiQuery = z.infer<typeof CpiQuerySchema>;
+
+export const CpiObservationEntrySchema = z.object({
+  categoryCode: z.string(),
+  periodDate: z.string(),
+  indexValue: z.number(),
+});
+
+export const CpiResponseSchema = z.object({
+  series: z.array(CpiObservationEntrySchema),
+});
+
+export type CpiResponse = z.infer<typeof CpiResponseSchema>;

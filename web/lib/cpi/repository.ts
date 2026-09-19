@@ -61,3 +61,93 @@ export async function getAllSeries(queryFn: QueryFn = query): Promise<CpiSeries[
      ORDER BY id`
   );
 }
+
+// Looks up series by code; used to validate requested category codes exist before querying
+// observations for them. Returns only the series that were found — callers diff against the
+// requested codes to report unknown ones.
+export async function getSeriesByCodes(
+  codes: string[],
+  queryFn: QueryFn = query
+): Promise<CpiSeries[]> {
+  if (codes.length === 0) return [];
+  return queryFn<CpiSeries>(
+    `SELECT id, code, name, level, parent_id AS "parentId", base_year AS "baseYear"
+     FROM cpi_series
+     WHERE code = ANY($1)
+     ORDER BY id`,
+    [codes]
+  );
+}
+
+// Sorted list of period dates actually ingested for one series (e.g. the "all-items" headline
+// series), used as the `availablePeriods` input to lib/inflation/period.ts's resolvePeriod.
+export async function getAvailablePeriods(
+  seriesCode: string,
+  queryFn: QueryFn = query
+): Promise<string[]> {
+  const rows = await queryFn<{ periodDate: string }>(
+    `SELECT o.period_date::text AS "periodDate"
+     FROM cpi_observation o
+     JOIN cpi_series s ON s.id = o.series_id
+     WHERE s.code = $1
+     ORDER BY o.period_date`,
+    [seriesCode]
+  );
+  return rows.map((r) => r.periodDate);
+}
+
+export type CategoryObservationRow = {
+  categoryCode: string;
+  periodDate: string;
+  indexValue: number;
+};
+
+// Long-format observations for a set of category codes over an inclusive date range (either bound
+// omittable), ordered for charting. `index_value` is `numeric` in Postgres, which `pg` returns as
+// a string — cast to Number here so every caller gets real numbers.
+export async function getObservationsByCodesInRange(
+  codes: string[],
+  range: { from?: string; to?: string },
+  queryFn: QueryFn = query
+): Promise<CategoryObservationRow[]> {
+  if (codes.length === 0) return [];
+  const conditions = ["s.code = ANY($1)"];
+  const params: unknown[] = [codes];
+  if (range.from) {
+    params.push(range.from);
+    conditions.push(`o.period_date >= $${params.length}`);
+  }
+  if (range.to) {
+    params.push(range.to);
+    conditions.push(`o.period_date <= $${params.length}`);
+  }
+
+  const rows = await queryFn<{ categoryCode: string; periodDate: string; indexValue: string }>(
+    `SELECT s.code AS "categoryCode", o.period_date::text AS "periodDate", o.index_value AS "indexValue"
+     FROM cpi_observation o
+     JOIN cpi_series s ON s.id = o.series_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY s.code, o.period_date`,
+    params
+  );
+  return rows.map((r) => ({ ...r, indexValue: Number(r.indexValue) }));
+}
+
+// Point-in-time observations for a set of category codes at a specific set of period dates (e.g.
+// exactly the resolved start/end of a requested range). Same numeric-string cast as above.
+export async function getObservationsByCodesAndPeriods(
+  codes: string[],
+  periodDates: string[],
+  queryFn: QueryFn = query
+): Promise<CategoryObservationRow[]> {
+  if (codes.length === 0 || periodDates.length === 0) return [];
+  const rows = await queryFn<{ categoryCode: string; periodDate: string; indexValue: string }>(
+    `SELECT s.code AS "categoryCode", o.period_date::text AS "periodDate", o.index_value AS "indexValue"
+     FROM cpi_observation o
+     JOIN cpi_series s ON s.id = o.series_id
+     WHERE s.code = ANY($1) AND o.period_date = ANY($2::date[])
+     ORDER BY s.code, o.period_date`,
+    [codes, periodDates]
+  );
+  return rows.map((r) => ({ ...r, indexValue: Number(r.indexValue) }));
+}
