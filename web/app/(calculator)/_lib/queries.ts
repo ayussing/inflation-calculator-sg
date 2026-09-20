@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getCpiSeries, postPersonalInflation } from "./apiClient";
+import { getCpiSeries, getPresets, postPersonalInflation } from "./apiClient";
 import type { BasketEntry } from "./basketUrl";
 
 /** The one place components get server data from — no component calls fetch/apiClient directly. */
@@ -24,6 +24,13 @@ export function usePersonalInflationQuery(params: { from: string; to: string; ca
       ),
     enabled: params.categories.length > 0 && hasPositiveSpend,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function usePresetsQuery() {
+  return useQuery({
+    queryKey: ["presets"],
+    queryFn: ({ signal }) => getPresets(signal),
   });
 }
 

@@ -6,6 +6,7 @@ import type { BasketEntry } from "../_lib/basketUrl";
 import type { RangePreset } from "../_lib/dateRange";
 import { BasketAllocationChart } from "./BasketAllocationChart";
 import { CategoryAmountRow } from "./CategoryAmountRow";
+import { PresetPicker } from "./PresetPicker";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 
 export function SpendingInputForm({
@@ -48,6 +49,10 @@ export function SpendingInputForm({
       <p className="mt-1 text-sm text-foreground/60">
         Select the categories you spend on and enter roughly how much you spend each month.
       </p>
+
+      <div className="mt-4">
+        <PresetPicker divisions={divisions} onApply={onBasketChange} />
+      </div>
 
       <div className="mt-4">
         <TimeRangeSelector

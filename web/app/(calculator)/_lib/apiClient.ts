@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { CpiResponse } from "@/lib/cpi/schema";
 import { PersonalInflationRequestSchema, type PersonalInflationResponse } from "@/lib/inflation/schema";
+import type { PresetsResponse } from "@/lib/presets/schema";
 import type { ErrorResponse } from "@/lib/http/apiError";
 
 // Use the schema's *input* type (plain "YYYY-MM" strings) for what the client sends, not its
@@ -39,6 +40,12 @@ export async function getCpiSeries(
   const res = await fetch(`/api/cpi?${params.toString()}`, { signal });
   if (!res.ok) throw await toApiRequestError(res);
   return (await res.json()) as CpiResponse;
+}
+
+export async function getPresets(signal?: AbortSignal): Promise<PresetsResponse> {
+  const res = await fetch("/api/presets", { signal });
+  if (!res.ok) throw await toApiRequestError(res);
+  return (await res.json()) as PresetsResponse;
 }
 
 export function describeApiError(error: unknown): string {
