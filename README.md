@@ -43,14 +43,12 @@ pulled from data.gov.sg on a schedule — via an AWS EventBridge cron rule that 
 Fargate task in production, or manually via a bearer-token-protected route / local script — and
 upserted idempotently, so the app itself never calls data.gov.sg on the request path. In
 production the app runs on ECS Fargate behind an Application Load Balancer, provisioned with AWS
-CDK (`infra/`), with CloudWatch alarms feeding an SNS alert topic.
+CDK (`infra/`).
 
 ![Architecture diagram](docs/arch.svg)
 
 See [docs/technical-documentation.md](docs/technical-documentation.md) for the full write-up
-(data model, calculation engine internals, API reference, ingestion pipeline, infra, testing) and
-[docs/personal-inflation-calculator-brief.md](docs/personal-inflation-calculator-brief.md) for the
-original design brief and rationale.
+(data model, calculation engine internals, API reference, ingestion pipeline, infra, testing)
 
 ## Repository layout
 
