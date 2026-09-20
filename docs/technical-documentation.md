@@ -10,8 +10,6 @@ rather than what was actually implemented; divergences are called out below wher
 
 ![Architecture diagram](arch.svg)
 
-*[Open in Excalidraw](https://excalidraw.com/#json=1EnL065TuVDMDe7-6HRWz,_XOrv4FVLJQAmrO-i--sfA) to view/edit live.*
-
 Frontend and backend are one Next.js app (`web/`) — there is no separate API service. Two request
 flows matter:
 

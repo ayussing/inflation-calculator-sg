@@ -47,8 +47,6 @@ CDK (`infra/`), with CloudWatch alarms feeding an SNS alert topic.
 
 ![Architecture diagram](docs/arch.svg)
 
-*[Open in Excalidraw](https://excalidraw.com/#json=1EnL065TuVDMDe7-6HRWz,_XOrv4FVLJQAmrO-i--sfA) to view/edit live.*
-
 See [docs/technical-documentation.md](docs/technical-documentation.md) for the full write-up
 (data model, calculation engine internals, API reference, ingestion pipeline, infra, testing) and
 [docs/personal-inflation-calculator-brief.md](docs/personal-inflation-calculator-brief.md) for the
