@@ -25,14 +25,6 @@ CPI data is ingested from data.gov.sg on a schedule and stored in Postgres; the 
 live API calls per request, and **user spending is never stored server-side** — a basket is
 shared by encoding it into the URL, not by saving it to a database.
 
-## Status
-
-Feature-complete for the core flow: calculation engine, CPI ingestion, the calculator UI (with
-basket presets, category explorer, and shareable links), a Swagger/OpenAPI surface, and an AWS
-deployment (CDK) are all implemented. Testcontainers-based integration tests, Playwright e2e
-tests, and a CI pipeline are called out in the [technical documentation](docs/technical-documentation.md)
-as open items, not yet built.
-
 ## Architecture
 
 One Next.js app (`web/`) serves both the React UI and the API — the Route Handlers under
