@@ -20,8 +20,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Three theme states: no data-theme (system) follows OS preference below; an explicit
+   data-theme="light"/"dark" (set by ThemeToggle) overrides it either direction. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #0a0a0a;
     --foreground: #ededed;
     --color-positive: #4ade80;
@@ -29,6 +31,15 @@
     --color-panel: #18181b;
     --color-panel-border: #27272a;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --color-positive: #4ade80;
+  --color-negative: #f87171;
+  --color-panel: #18181b;
+  --color-panel-border: #27272a;
 }
 
 body {
